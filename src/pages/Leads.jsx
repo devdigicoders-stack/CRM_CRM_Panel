@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { Phone, MessageCircle, Edit3, X, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Mail, MapPin, AlertCircle, TrendingUp, Plus, Eye, FileText, UserPlus } from 'lucide-react';
+import { Phone, MessageCircle, Edit3, X, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Mail, MapPin, AlertCircle, TrendingUp, Plus, Eye, FileText, UserPlus, Upload, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadAPI } from '../api/lead';
 import { userAPI } from '../api/user';
+import { dashboardAPI } from '../api/dashboard';
+import axiosInstance from '../api/axiosInstance';
 import { useNavigate } from 'react-router-dom';
 
 export default function Leads() {
@@ -40,6 +42,12 @@ export default function Leads() {
   const [assignUserId, setAssignUserId] = useState('');
   const [isAssigning, setIsAssigning] = useState(false);
   const [salesUsers, setSalesUsers] = useState([]);
+  const [leadTags, setLeadTags] = useState([]);
+
+  // Bulk Upload Modal State
+  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
+  const [bulkFile, setBulkFile] = useState(null);
+  const [isBulkUploading, setIsBulkUploading] = useState(false);
 
   const handleViewDetails = async (id) => {
     try {
@@ -105,14 +113,16 @@ export default function Leads() {
     const fetchSalesUsers = async () => {
       try {
         const res = await userAPI.getSalesList();
-        if (res?.data?.users) {
-          setSalesUsers(res.data.users);
-        }
+        setSalesUsers(res?.data?.users || []);
       } catch (err) {
         console.error("Failed to fetch sales users:", err);
       }
     };
     fetchSalesUsers();
+
+    dashboardAPI.getSettings()
+      .then(res => setLeadTags(res?.data?.settings?.leadTags || []))
+      .catch(() => {});
   }, []);
 
   const openAssignModal = (lead) => {
@@ -123,15 +133,20 @@ export default function Leads() {
 
   const handleAssignLead = async (e) => {
     e.preventDefault();
-    if (!assignUserId.trim()) return toast.error("Please enter a User ID.");
+    if (!assignUserId.trim()) return toast.error("Please select a sales representative.");
     
     try {
       setIsAssigning(true);
-      const res = await leadAPI.assignLead(assignSelectedLead._id, assignUserId.trim());
-      const updatedLead = res?.data?.lead || res?.lead;
-      if (updatedLead) {
-        setLeads(leads.map(l => l._id === assignSelectedLead._id ? { ...l, ...updatedLead } : l));
-      }
+      await leadAPI.assignLead(assignSelectedLead._id, assignUserId.trim());
+      
+      // salesUsers se selected user ka naam nikalo
+      const selectedUser = salesUsers.find(u => u._id === assignUserId.trim());
+      
+      setLeads(prev => prev.map(l =>
+        l._id === assignSelectedLead._id
+          ? { ...l, assignedTo: selectedUser || { _id: assignUserId, name: 'Assigned' } }
+          : l
+      ));
       toast.success("Lead assigned successfully!");
       setIsAssignModalOpen(false);
     } catch (err) {
@@ -139,6 +154,42 @@ export default function Leads() {
     } finally {
       setIsAssigning(false);
     }
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkFile) return toast.error('Pehle file select karo.');
+    try {
+      setIsBulkUploading(true);
+      const formData = new FormData();
+      formData.append('file', bulkFile);
+      await axiosInstance.post('/leads/bulk-upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Leads bulk uploaded successfully!');
+      setIsBulkModalOpen(false);
+      setBulkFile(null);
+      fetchLeads();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Bulk upload failed.');
+    } finally {
+      setIsBulkUploading(false);
+    }
+  };
+
+  const handleSampleDownload = () => {
+    const headers = ['name', 'phone', 'email', 'source', 'priority', 'remark'];
+    const sample = [
+      ['Rahul Sharma', '9876543210', 'rahul@example.com', 'Google Ads', 'high', 'Interested in product'],
+      ['Priya Singh', '9123456789', 'priya@example.com', 'Facebook Ads', 'medium', 'Follow up next week'],
+    ];
+    const csvContent = [headers, ...sample].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'leads_sample.csv';
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   // Pagination states
@@ -266,9 +317,15 @@ export default function Leads() {
           <p className="mt-2 text-base" style={{ color: themeColors?.textSecondary || '#4b5563' }}>Manage, engage, and convert your leads efficiently.</p>
         </div>
         <div className="flex items-center gap-3">
-          <button 
+          <button
+            onClick={() => setIsBulkModalOpen(true)}
+            className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold bg-green-50 text-green-700 border border-green-200 hover:bg-green-600 hover:text-white hover:shadow-lg hover:-translate-y-0.5 transition-all"
+          >
+            <Upload className="mr-2 w-4 h-4" /> Bulk Upload Excel
+          </button>
+          <button
             onClick={() => navigate('/add-lead')}
-            className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            className="inline-flex items-center px-5 py-2.5 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-md shadow-blue-200 hover:shadow-lg hover:bg-blue-700 hover:-translate-y-0.5 transition-all"
           >
             <Plus className="mr-2 w-4 h-4" /> Add Lead
           </button>
@@ -302,11 +359,9 @@ export default function Leads() {
             style={{ borderColor: themeColors?.border }}
           >
             <option value="">All Tags</option>
-            <option value="Interested">Interested</option>
-            <option value="Not Interested">Not Interested</option>
-            <option value="Hot Lead">Hot Lead</option>
-            <option value="Follow Up">Follow Up</option>
-            <option value="Callback Requested">Callback Requested</option>
+            {leadTags.map(tag => (
+              <option key={tag} value={tag}>{tag}</option>
+            ))}
           </select>
         </div>
         <button 
@@ -669,6 +724,113 @@ export default function Leads() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Upload Modal */}
+      {isBulkModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
+          <div className="w-full max-w-lg rounded-2xl shadow-2xl bg-white overflow-hidden">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-emerald-500 px-6 py-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                    <Upload size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-lg text-white">Bulk Upload Leads</h3>
+                    <p className="text-green-100 text-xs mt-0.5">Excel ya CSV se ek saath kai leads add karo</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setIsBulkModalOpen(false); setBulkFile(null); }}
+                  className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-all"
+                >
+                  <X size={16} className="text-white" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+
+              {/* Step 1 - Sample */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                <div className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center shrink-0 text-sm font-black">1</div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-gray-800">Sample file download karo</p>
+                  <p className="text-xs text-gray-500 mt-0.5">Isi format mein apna data fill karke upload karo</p>
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {['name *', 'phone *', 'email', 'source', 'priority', 'remark'].map(f => (
+                      <span key={f} className="px-2 py-0.5 rounded bg-white border border-blue-200 text-[10px] font-bold text-blue-600">{f}</span>
+                    ))}
+                  </div>
+                </div>
+                <button
+                  onClick={handleSampleDownload}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-700 transition-all shrink-0"
+                >
+                  <Download size={13} /> Download
+                </button>
+              </div>
+
+              {/* Step 2 - Upload */}
+              <div className="flex items-start gap-4">
+                <div className="w-9 h-9 rounded-xl bg-green-600 text-white flex items-center justify-center shrink-0 text-sm font-black mt-1">2</div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-gray-800 mb-2">File select karo aur upload karo</p>
+                  <label className={`flex flex-col items-center justify-center w-full h-28 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                    bulkFile
+                      ? 'border-green-400 bg-green-50'
+                      : 'border-gray-200 bg-gray-50 hover:border-green-400 hover:bg-green-50'
+                  }`}>
+                    {bulkFile ? (
+                      <>
+                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center mb-1">
+                          <FileText size={16} className="text-green-600" />
+                        </div>
+                        <p className="text-sm font-bold text-green-700 px-4 text-center truncate max-w-full">{bulkFile.name}</p>
+                        <p className="text-[11px] text-green-500 mt-0.5">File ready hai ✓</p>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={22} className="text-gray-300 mb-1" />
+                        <p className="text-sm font-bold text-gray-400">Click karo ya drag karo</p>
+                        <p className="text-[11px] text-gray-300 mt-0.5">.xlsx · .xls · .csv</p>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls,.csv"
+                      className="hidden"
+                      onChange={e => setBulkFile(e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-3 pt-2 border-t border-gray-100">
+                <button
+                  onClick={() => { setIsBulkModalOpen(false); setBulkFile(null); }}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm border border-gray-200 text-gray-500 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleBulkUpload}
+                  disabled={!bulkFile || isBulkUploading}
+                  className="flex-1 py-2.5 rounded-xl font-bold text-sm bg-green-600 text-white hover:bg-green-700 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed shadow-md shadow-green-200"
+                >
+                  {isBulkUploading
+                    ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Uploading...</>
+                    : <><Upload size={14} /> Upload Karo</>
+                  }
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

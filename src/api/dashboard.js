@@ -27,4 +27,8 @@ export const dashboardAPI = {
     const response = await axiosInstance.get("/dashboard/reminders/today");
     return response.data;
   },
+  getSettings: async () => {
+    const response = await axiosInstance.get("/settings");
+    return response.data;
+  },
 };

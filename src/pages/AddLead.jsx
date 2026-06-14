@@ -1,36 +1,58 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
-  User, Phone, Mail, FileText, Zap, Globe,
-  Facebook, PhoneCall, Users, ChevronDown,
-  CheckCircle2, AlertCircle, Sparkles, PlusCircle
+  User, Phone, Mail, FileText, Zap,
+  Globe, Facebook, PhoneCall, Users, ChevronDown,
+  CheckCircle2, AlertCircle, Sparkles, PlusCircle, UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadAPI } from '../api/lead';
+import { userAPI } from '../api/user';
+import { dashboardAPI } from '../api/dashboard';
 
-const EMPTY = { name: '', phone: '', email: '', source: 'Google Ads', priority: 'medium', remark: '' };
+const EMPTY = { name: '', phone: '', email: '', source: '', priority: '', remark: '', assignedTo: '', tags: '' };
 
-const SOURCES = [
-  { value: 'Google Ads',   label: 'Google Ads',   icon: Globe,     color: '#4285f4' },
-  { value: 'Facebook',     label: 'Facebook',      icon: Facebook,  color: '#1877f2' },
-  { value: 'Referral',     label: 'Referral',      icon: Users,     color: '#8b5cf6' },
-  { value: 'Direct Call',  label: 'Direct Call',   icon: PhoneCall, color: '#10b981' },
-  { value: 'Website',      label: 'Website',       icon: Globe,     color: '#f59e0b' },
-];
+const PRIORITY_META = {
+  high:   { color: '#ef4444', bg: '#fee2e2', border: '#fca5a5', desc: 'Urgent' },
+  medium: { color: '#f59e0b', bg: '#fef3c7', border: '#fcd34d', desc: 'Normal' },
+  low:    { color: '#10b981', bg: '#d1fae5', border: '#6ee7b7', desc: 'Relaxed' },
+};
 
-const PRIORITIES = [
-  { value: 'high',   label: 'High',   desc: 'Urgent',  color: '#ef4444', bg: '#fee2e2', border: '#fca5a5' },
-  { value: 'medium', label: 'Medium', desc: 'Normal',  color: '#f59e0b', bg: '#fef3c7', border: '#fcd34d' },
-  { value: 'low',    label: 'Low',    desc: 'Relaxed', color: '#10b981', bg: '#d1fae5', border: '#6ee7b7' },
-];
+const SOURCE_COLORS = ['#4285f4','#1877f2','#8b5cf6','#10b981','#f59e0b','#ef4444','#06b6d4'];
 
 export default function AddLead() {
   const { themeColors: c } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState(EMPTY);
   const [submitted, setSubmitted] = useState(false);
+  const [salesList, setSalesList] = useState([]);
+  const [sources, setSources] = useState([]);
+  const [priorities, setPriorities] = useState([]);
+  const [leadTags, setLeadTags] = useState([]);
 
   const isDark = c.mode === 'dark';
+
+  useEffect(() => {
+    userAPI.getSalesList()
+      .then(res => setSalesList(res?.data?.users || []))
+      .catch(() => setSalesList([]));
+
+    dashboardAPI.getSettings()
+      .then(res => {
+        const s = res?.data?.settings;
+        if (s) {
+          setSources(s.leadSources || []);
+          setPriorities(s.priorities || []);
+          setLeadTags(s.leadTags || []);
+          setFormData(prev => ({
+            ...prev,
+            source: s.leadSources?.[0] || '',
+            priority: s.priorities?.[0] || '',
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleChange = (e) =>
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -145,29 +167,23 @@ export default function AddLead() {
           {/* ── LEAD SOURCE ── */}
           <div className="space-y-2.5">
             <label className="block text-[11px] font-bold uppercase tracking-wider"
-              style={{ color: c.textSecondary }}>
-              Lead Source *
-            </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
-              {SOURCES.map(({ value, label, icon: Icon, color }) => {
-                const active = formData.source === value;
+              style={{ color: c.textSecondary }}>Lead Source *</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+              {sources.map((src, i) => {
+                const active = formData.source === src;
+                const color = SOURCE_COLORS[i % SOURCE_COLORS.length];
                 return (
-                  <button key={value} type="button"
-                    onClick={() => setFormData(p => ({ ...p, source: value }))}
-                    className="flex flex-col items-center gap-1.5 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02]"
+                  <button key={src} type="button"
+                    onClick={() => setFormData(p => ({ ...p, source: src }))}
+                    className="flex items-center gap-2 p-3 rounded-xl border transition-all duration-200 hover:scale-[1.02]"
                     style={{
                       backgroundColor: active ? `${color}15` : c.background,
                       borderColor: active ? color : c.border,
                       boxShadow: active ? `0 0 0 2px ${color}30` : 'none',
                     }}>
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                      style={{ backgroundColor: active ? `${color}20` : `${c.border}40` }}>
-                      <Icon size={16} style={{ color: active ? color : c.textSecondary }} />
-                    </div>
-                    <span className="text-[11px] font-bold text-center leading-tight"
-                      style={{ color: active ? color : c.textSecondary }}>
-                      {label}
-                    </span>
+                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                    <span className="text-xs font-bold truncate"
+                      style={{ color: active ? color : c.text }}>{src}</span>
                   </button>
                 );
               })}
@@ -177,36 +193,76 @@ export default function AddLead() {
           {/* ── PRIORITY ── */}
           <div className="space-y-2.5">
             <label className="block text-[11px] font-bold uppercase tracking-wider"
-              style={{ color: c.textSecondary }}>
-              Priority Level *
-            </label>
+              style={{ color: c.textSecondary }}>Priority Level *</label>
             <div className="grid grid-cols-3 gap-3">
-              {PRIORITIES.map(({ value, label, desc, color, bg, border }) => {
-                const active = formData.priority === value;
+              {priorities.map((p) => {
+                const meta = PRIORITY_META[p] || { color: '#6b7280', bg: '#f9fafb', border: '#d1d5db', desc: '' };
+                const active = formData.priority === p;
                 return (
-                  <button key={value} type="button"
-                    onClick={() => setFormData(p => ({ ...p, priority: value }))}
+                  <button key={p} type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, priority: p }))}
                     className="flex items-center gap-2.5 p-3 sm:p-4 rounded-xl border transition-all duration-200 hover:scale-[1.01]"
                     style={{
-                      backgroundColor: active ? bg : c.background,
-                      borderColor: active ? border : c.border,
-                      boxShadow: active ? `0 0 0 2px ${color}25` : 'none',
+                      backgroundColor: active ? meta.bg : c.background,
+                      borderColor: active ? meta.border : c.border,
+                      boxShadow: active ? `0 0 0 2px ${meta.color}25` : 'none',
                     }}>
-                    {/* Dot indicator */}
-                    <div className="w-3 h-3 rounded-full shrink-0 transition-all duration-200"
-                      style={{
-                        backgroundColor: active ? color : c.border,
-                        boxShadow: active ? `0 0 0 3px ${color}30` : 'none',
-                      }} />
+                    <div className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: active ? meta.color : c.border }} />
                     <div className="text-left min-w-0">
-                      <p className="text-xs font-bold truncate"
-                        style={{ color: active ? color : c.text }}>{label}</p>
+                      <p className="text-xs font-bold capitalize truncate"
+                        style={{ color: active ? meta.color : c.text }}>{p}</p>
                       <p className="text-[10px] hidden sm:block"
-                        style={{ color: active ? color : c.textSecondary }}>{desc}</p>
+                        style={{ color: active ? meta.color : c.textSecondary }}>{meta.desc}</p>
                     </div>
                   </button>
                 );
               })}
+            </div>
+          </div>
+
+          {/* ── TAGS ── */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: c.textSecondary }}>Tags</label>
+            <div className="relative">
+              <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto pointer-events-none"
+                style={{ color: c.textSecondary }} />
+              <select name="tags" value={formData.tags} onChange={handleChange}
+                className="w-full pl-4 pr-8 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all appearance-none"
+                style={{ backgroundColor: c.background, color: c.text, borderColor: c.border }}>
+                <option value="">-- Select Tag --</option>
+                {leadTags.map(tag => (
+                  <option key={tag} value={tag}>{tag}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* ── ASSIGNED TO ── */}
+          <div className="space-y-1.5">
+            <label className="block text-[11px] font-bold uppercase tracking-wider"
+              style={{ color: c.textSecondary }}>
+              Assigned To (Sales)
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+                style={{ color: c.textSecondary }}>
+                <UserCheck size={15} />
+              </div>
+              <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto pointer-events-none"
+                style={{ color: c.textSecondary }} />
+              <select
+                name="assignedTo"
+                value={formData.assignedTo}
+                onChange={handleChange}
+                className="w-full pl-10 pr-8 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all appearance-none"
+                style={{ backgroundColor: c.background, color: c.text, borderColor: c.border }}>
+                <option value="">-- Select Sales Person --</option>
+                {salesList.map(s => (
+                  <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -254,7 +310,7 @@ export default function AddLead() {
                   icon={AlertCircle}
                   label={formData.priority}
                   c={c}
-                  color={PRIORITIES.find(p => p.value === formData.priority)?.color}
+                  color={PRIORITY_META[formData.priority]?.color}
                 />
               )}
             </div>
