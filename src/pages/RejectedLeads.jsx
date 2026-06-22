@@ -57,10 +57,11 @@ export default function RejectedLeads() {
     }
   };
 
-  // Filter rejected leads: status === 'not_interested' or 'rejected'
+  // Filter rejected leads: status === 'not_interested' or 'rejected' OR verificationStatus === 'rejected'
   const rejectedLeads = leads.filter(lead => {
     const status = (lead.status || '').toLowerCase();
-    const isRejected = status === 'not_interested' || status === 'rejected';
+    const verificationStatus = (lead.verificationStatus || '').toLowerCase();
+    const isRejected = status === 'not_interested' || status === 'rejected' || verificationStatus === 'rejected';
     
     if (!isRejected) return false;
     
