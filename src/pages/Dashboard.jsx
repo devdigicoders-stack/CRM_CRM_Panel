@@ -5,7 +5,7 @@ import HighchartsReact from "highcharts-react-official";
 import {
   Users, UserCheck, Clock, PhoneOff,
   TrendingUp, RefreshCw, AlertCircle,
-  BarChart2, PieChart, Activity
+  BarChart2, PieChart, Activity, ArrowUpRight
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
@@ -225,9 +225,10 @@ export default function Dashboard() {
               style={{ backgroundColor: color }} />
 
             <div className="z-10">
-              <p className="text-[11px] font-bold uppercase tracking-wider mb-1"
+              <p className="text-[11px] font-bold uppercase tracking-wider mb-1 flex items-center gap-1"
                 style={{ color: isDark ? c.textSecondary : color }}>
                 {title}
+                <ArrowUpRight size={13} className="opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-200" />
               </p>
               <p className="text-3xl sm:text-4xl font-black tracking-tight"
                 style={{ color: isDark ? c.text : color }}>
