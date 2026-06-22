@@ -7,9 +7,11 @@ import {
   TrendingUp, RefreshCw, AlertCircle,
   BarChart2, PieChart, Activity
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { themeColors: c } = useTheme();
   const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,6 +74,7 @@ export default function Dashboard() {
       color: "#3b82f6",
       bg: "#eff6ff",
       border: "#bfdbfe",
+      path: "/leads",
     },
     {
       title: "Assigned Leads",
@@ -80,6 +83,7 @@ export default function Dashboard() {
       color: "#10b981",
       bg: "#ecfdf5",
       border: "#6ee7b7",
+      path: "/leads",
     },
     {
       title: "Today's Reminders",
@@ -88,6 +92,7 @@ export default function Dashboard() {
       color: "#f59e0b",
       bg: "#fffbeb",
       border: "#fcd34d",
+      path: "/today-reminders",
     },
     {
       title: "Missed Follow-ups",
@@ -96,6 +101,7 @@ export default function Dashboard() {
       color: "#ef4444",
       bg: "#fff1f2",
       border: "#fca5a5",
+      path: "/missed-followups",
     },
   ];
 
@@ -206,9 +212,10 @@ export default function Dashboard() {
 
       {/* ══════════ STAT CARDS ══════════ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        {statCards.map(({ title, value, icon: Icon, color, bg, border }) => (
+        {statCards.map(({ title, value, icon: Icon, color, bg, border, path }) => (
           <div key={title}
-            className="relative overflow-hidden rounded-2xl border p-4 sm:p-5 flex items-center justify-between group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+            onClick={() => path && navigate(path)}
+            className="relative overflow-hidden rounded-2xl border p-4 sm:p-5 flex items-center justify-between group transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg cursor-pointer"
             style={{
               backgroundColor: isDark ? c.surface : bg,
               borderColor: isDark ? c.border : border,
