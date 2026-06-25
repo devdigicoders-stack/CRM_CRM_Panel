@@ -29,8 +29,41 @@ export default function AddLead() {
   const [sources, setSources] = useState([]);
   const [priorities, setPriorities] = useState([]);
   const [leadTags, setLeadTags] = useState([]);
+  const [phoneConflict, setPhoneConflict] = useState(null);
 
   const isDark = c.mode === 'dark';
+
+  useEffect(() => {
+    const phone = formData.phone?.trim();
+    const cleanPhone = phone?.replace(/\D/g, '');
+    
+    if (!phone || cleanPhone.length < 10) {
+      setPhoneConflict(null);
+      return;
+    }
+
+    const delayDebounce = setTimeout(() => {
+      leadAPI.checkPhone(phone)
+        .then(res => {
+          if (res?.exists) {
+            const lead = res.lead;
+            setPhoneConflict({
+              exists: true,
+              name: lead.name,
+              assignedToName: lead.assignedTo?.name || null,
+              assignedToRole: lead.assignedTo?.role || null,
+            });
+          } else {
+            setPhoneConflict(null);
+          }
+        })
+        .catch(() => {
+          setPhoneConflict(null);
+        });
+    }, 400);
+
+    return () => clearTimeout(delayDebounce);
+  }, [formData.phone]);
 
   useEffect(() => {
     userAPI.getSalesList()
@@ -147,6 +180,20 @@ export default function AddLead() {
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all"
                 style={inputSt}
               />
+              {phoneConflict && (
+                <div className="mt-2 flex items-start gap-2.5 p-3 rounded-xl border text-xs font-bold animate-in fade-in duration-200"
+                  style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5', color: '#b91c1c' }}>
+                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
+                  <div>
+                    <span>⚠️ Yeh lead/mobile number pehle se hi added hai under lead <b>{phoneConflict.name}</b>.</span>
+                    {phoneConflict.assignedToName ? (
+                      <span> Assigned to: <b className="capitalize">{phoneConflict.assignedToName}</b> ({phoneConflict.assignedToRole || 'sales'})</span>
+                    ) : (
+                      <span> (Not assigned yet)</span>
+                    )}
+                  </div>
+                </div>
+              )}
             </Field>
           </div>
 

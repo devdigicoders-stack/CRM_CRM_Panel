@@ -63,4 +63,14 @@ export const leadAPI = {
     const response = await axiosInstance.put(`/leads/${id}/assign`, { userId });
     return response.data;
   },
+
+  /**
+   * Check if a phone number already exists in leads
+   * @param {string} phone - Phone number to check
+   * @returns Promise with check-phone details
+   */
+  checkPhone: async (phone) => {
+    const response = await axiosInstance.get('/leads/check-phone', { params: { phone } });
+    return response.data;
+  },
 };
