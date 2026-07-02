@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import WhatsAppChooserModal from '../components/WhatsAppChooserModal';
 import { useTheme } from '../context/ThemeContext';
 import {
   Phone, MessageCircle, AlertTriangle, CalendarX,
@@ -11,6 +12,8 @@ import { dashboardAPI } from '../api/dashboard';
 const ITEMS = 10;
 
 export default function MissedFollowups() {
+  const [waModalLead, setWaModalLead] = useState(null);
+
   const { themeColors: c } = useTheme();
   const [leads, setLeads]           = useState([]);
   const [loading, setLoading]       = useState(true);
@@ -266,14 +269,14 @@ export default function MissedFollowups() {
                             style={{ backgroundColor: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' }}
                             title="Call">
                             <Phone size={15} />
-                          </a>
+                          </button>
                           {lead.integrations?.whatsappLink && (
-                            <a href={lead.integrations.whatsappLink} target="_blank" rel="noreferrer"
+                            <button onClick={() => setWaModalLead(lead)}
                               className="p-2 rounded-lg border transition-all hover:scale-105"
                               style={{ backgroundColor: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}
                               title="WhatsApp">
                               <MessageCircle size={15} />
-                            </a>
+                            </button>
                           )}
                         </div>
                       </td>
@@ -406,7 +409,7 @@ function MobileCard({ lead, c, fmtDate, getBadge, priorityStyle, statusStyle }) 
             <Phone size={14} />
           </a>
           {lead.integrations?.whatsappLink && (
-            <a href={lead.integrations.whatsappLink} target="_blank" rel="noreferrer"
+            <button onClick={() => setWaModalLead(lead)}
               className="p-2 rounded-lg border transition-all"
               style={{ backgroundColor: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}>
               <MessageCircle size={14} />
@@ -414,6 +417,7 @@ function MobileCard({ lead, c, fmtDate, getBadge, priorityStyle, statusStyle }) 
           )}
         </div>
       </div>
+      <WhatsAppChooserModal link={waModalLead?.integrations?.whatsappLink} phone={waModalLead?.phone} isOpen={!!waModalLead} onClose={() => setWaModalLead(null)} />
     </div>
   );
 }
@@ -429,5 +433,6 @@ function PageBtn({ children, onClick, disabled, c }) {
       style={{ backgroundColor: c.background, borderColor: c.border, color: c.text }}>
       {children}
     </button>
+      
   );
 }
