@@ -3,7 +3,7 @@ import { useTheme } from "../context/ThemeContext";
 import axiosInstance from "../api/axiosInstance";
 import {
   Calendar, Clock, User, Phone, ChevronLeft, ChevronRight,
-  RefreshCw, AlertCircle, X
+  RefreshCw, AlertCircle, X, FileText
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -262,6 +262,15 @@ export default function MeetingsCalendar() {
                         </span>
                       )}
                     </div>
+                    {m.meetingNote && (
+                      <div className="mt-2.5 p-3 rounded-xl border text-sm"
+                        style={{ backgroundColor: c.background, borderColor: c.border, color: c.text }}>
+                        <div className="flex items-center gap-1.5 font-bold mb-1 text-[11px] uppercase tracking-wider" style={{ color: c.textSecondary }}>
+                          <FileText size={12} /> Notes / Description
+                        </div>
+                        <p>{m.meetingNote}</p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Date & Time Box */}
