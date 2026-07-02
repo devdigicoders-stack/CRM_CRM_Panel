@@ -286,7 +286,7 @@ export default function TodayReminders() {
                             style={{ backgroundColor: '#eff6ff', color: '#2563eb', borderColor: '#bfdbfe' }}
                             title="Call">
                             <Phone size={15} />
-                          </button>
+                          </a>
                           {lead.integrations?.whatsappLink && (
                             <button onClick={() => setWaModalLead(lead)}
                               className="p-2 rounded-lg border transition-all hover:scale-105"
@@ -437,7 +437,7 @@ function MobileCard({ lead, c, fmtDate, getBadge, priorityStyle, statusStyle, is
               className="p-2 rounded-lg border transition-all"
               style={{ backgroundColor: '#f0fdf4', color: '#16a34a', borderColor: '#bbf7d0' }}>
               <MessageCircle size={14} />
-            </a>
+            </button>
           )}
         </div>
       </div>
