@@ -175,6 +175,7 @@ export default function AddLead() {
             <Field label="Phone Number *" icon={Phone} c={c}>
               <input
                 required type="tel" name="phone"
+                maxLength={10} pattern="[0-9]{10}"
                 value={formData.phone} onChange={handleChange}
                 placeholder="e.g. 9876543210"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all"

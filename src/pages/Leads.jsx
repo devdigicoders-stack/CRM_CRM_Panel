@@ -698,7 +698,7 @@ export default function Leads() {
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Next Follow-up Date</label>
-                  <input type="date" value={remarkData.followUpDate} onChange={e => setRemarkData({...remarkData, followUpDate: e.target.value})} className="w-full p-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-100 focus:outline-none bg-gray-50/50 text-gray-900 font-medium" />
+                  <input type="datetime-local" value={remarkData.followUpDate} onChange={e => setRemarkData({...remarkData, followUpDate: e.target.value})} className="w-full p-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-orange-100 focus:outline-none bg-gray-50/50 text-gray-900 font-medium" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Tags (comma separated)</label>
