@@ -9,6 +9,10 @@ export default function LeadAssignmentReport() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
+  // Pagination
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
   // Date filters
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -20,12 +24,13 @@ export default function LeadAssignmentReport() {
       setLoading(true);
       setError(null);
       
-      const params = {};
+      const params = { page, limit: 10 };
       if (startDate) params.startDate = startDate;
       if (endDate) params.endDate = endDate;
       
       const res = await dashboardAPI.getLeadReport(params);
       setReportData(res?.data?.report || []);
+      setTotalPages(res?.pagination?.totalPages || 1);
     } catch (err) {
       setError("Failed to load lead assignment report.");
     } finally {
@@ -36,7 +41,12 @@ export default function LeadAssignmentReport() {
   useEffect(() => {
     fetchReport();
     // eslint-disable-next-line
-  }, []);
+  }, [page]);
+
+  const handleApplyFilter = () => {
+    setPage(1);
+    fetchReport();
+  };
 
   /* ── Loading ── */
   if (loading && reportData.length === 0) return (
@@ -119,7 +129,7 @@ export default function LeadAssignmentReport() {
           />
         </div>
         <button
-          onClick={fetchReport}
+          onClick={handleApplyFilter}
           className="w-full sm:w-auto px-5 py-2.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all hover:opacity-90"
           style={{ backgroundColor: c.primary, color: "#fff" }}
         >
@@ -169,6 +179,31 @@ export default function LeadAssignmentReport() {
           </table>
         </div>
       </div>
+
+      {/* ══════════ PAGINATION ══════════ */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(page - 1)}
+            className="px-4 py-2 rounded-xl text-sm font-bold border transition-all disabled:opacity-50"
+            style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
+          >
+            Previous
+          </button>
+          <span className="text-sm font-semibold" style={{ color: c.textSecondary }}>
+            Page {page} of {totalPages}
+          </span>
+          <button
+            disabled={page === totalPages}
+            onClick={() => setPage(page + 1)}
+            className="px-4 py-2 rounded-xl text-sm font-bold border transition-all disabled:opacity-50"
+            style={{ backgroundColor: c.surface, borderColor: c.border, color: c.text }}
+          >
+            Next
+          </button>
+        </div>
+      )}
     </div>
   );
 }
