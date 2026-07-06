@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { dashboardAPI } from "../api/dashboard";
 import { useTheme } from "../context/ThemeContext";
 import { FileText, RefreshCw, AlertCircle, Calendar } from "lucide-react";
@@ -42,6 +42,22 @@ export default function LeadAssignmentReport() {
     fetchReport();
     // eslint-disable-next-line
   }, [page]);
+
+  const groupedData = useMemo(() => {
+    const groups = {};
+    reportData.forEach(row => {
+      const key = row.assignee;
+      if (!groups[key]) {
+        groups[key] = {
+          assignee: row.assignee,
+          assigneeRole: row.assigneeRole,
+          leadsAssigned: 0,
+        };
+      }
+      groups[key].leadsAssigned += row.leadsAssigned;
+    });
+    return Object.values(groups).sort((a, b) => b.leadsAssigned - a.leadsAssigned);
+  }, [reportData]);
 
   const handleApplyFilter = () => {
     setPage(1);
@@ -89,7 +105,7 @@ export default function LeadAssignmentReport() {
             Lead Assignment Report
           </h1>
           <p className="mt-1 text-sm" style={{ color: c.textSecondary }}>
-            Date-wise report of lead assignments to team members.
+            User-wise report of lead assignments.
           </p>
         </div>
       </div>
@@ -143,17 +159,15 @@ export default function LeadAssignmentReport() {
           <table className="w-full text-left border-collapse">
             <thead>
               <tr style={{ backgroundColor: isDark ? `${c.border}40` : "#f9fafb", borderBottom: `1px solid ${c.border}` }}>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider" style={{ color: c.textSecondary }}>Date</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider" style={{ color: c.textSecondary }}>Assignee Name</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider" style={{ color: c.textSecondary }}>Role</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider" style={{ color: c.textSecondary }}>Leads Assigned</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider" style={{ color: c.textSecondary }}>Total Leads Assigned</th>
               </tr>
             </thead>
             <tbody>
-              {reportData.length > 0 ? (
-                reportData.map((row, index) => (
+              {groupedData.length > 0 ? (
+                groupedData.map((row, index) => (
                   <tr key={index} style={{ borderBottom: `1px solid ${c.border}` }} className="hover:bg-opacity-50 transition-colors">
-                    <td className="px-6 py-4 text-sm font-semibold" style={{ color: c.text }}>{row.date}</td>
                     <td className="px-6 py-4 text-sm font-bold" style={{ color: c.text }}>{row.assignee}</td>
                     <td className="px-6 py-4 text-sm">
                       <span className="px-2.5 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide border"
@@ -170,7 +184,7 @@ export default function LeadAssignmentReport() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-6 py-8 text-center text-sm" style={{ color: c.textSecondary }}>
+                  <td colSpan="3" className="px-6 py-8 text-center text-sm" style={{ color: c.textSecondary }}>
                     No assignment records found for the selected dates.
                   </td>
                 </tr>
