@@ -30,12 +30,31 @@ export default function MeetingsCalendar() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedDay, setSelectedDay] = useState(null);
+  
+  const [selectedEventForRemark, setSelectedEventForRemark] = useState(null);
+  const [remarkData, setRemarkData] = useState({ note: '', status: '', followUpDate: '' });
+  const [isSubmittingRemark, setIsSubmittingRemark] = useState(false);
 
   const today = new Date();
   const [currentYear, setCurrentYear] = useState(today.getFullYear());
   const [currentMonth, setCurrentMonth] = useState(today.getMonth());
 
   useEffect(() => { fetchData(); }, []);
+
+  useEffect(() => {
+    if (selectedEventForRemark) {
+      let tzDate = '';
+      if (selectedEventForRemark.followUpDate) {
+        const d = new Date(selectedEventForRemark.followUpDate);
+        tzDate = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      }
+      setRemarkData({
+        note: '',
+        status: selectedEventForRemark.status || 'new',
+        followUpDate: tzDate
+      });
+    }
+  }, [selectedEventForRemark]);
 
   const fetchData = async () => {
     try {
@@ -81,6 +100,37 @@ export default function MeetingsCalendar() {
   const handleDayClick = (day) => {
     const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     setSelectedDay({ dateStr, day, meetings: byDate[dateStr] || [] });
+  };
+
+  const handleAddRemark = async (e) => {
+    e.preventDefault();
+    if (!remarkData.note.trim()) return toast.error("Remark note is required");
+    
+    setIsSubmittingRemark(true);
+    try {
+      const payload = {
+        note: remarkData.note,
+        status: remarkData.status
+      };
+      
+      if (remarkData.followUpDate) {
+        payload.followUpDate = new Date(remarkData.followUpDate).toISOString();
+      }
+
+      const res = await axiosInstance.post(`/leads/${selectedEventForRemark._id}/remarks`, payload);
+      
+      if (res.data.status === "success") {
+        toast.success("Lead updated successfully!");
+        setSelectedEventForRemark(null);
+        setSelectedDay(null);
+        fetchData();
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Failed to update lead");
+    } finally {
+      setIsSubmittingRemark(false);
+    }
   };
 
   if (loading)
@@ -271,6 +321,15 @@ export default function MeetingsCalendar() {
                         <p>{m.meetingNote}</p>
                       </div>
                     )}
+                    <div className="mt-3">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedEventForRemark(m); }}
+                        className="px-4 py-2 rounded-lg text-xs font-bold text-white shadow-sm transition-transform hover:scale-105"
+                        style={{ backgroundColor: c.primary }}
+                      >
+                        Update Lead
+                      </button>
+                    </div>
                   </div>
 
                   {/* Date & Time Box */}
@@ -289,6 +348,83 @@ export default function MeetingsCalendar() {
               ))}
             </div>
           )}
+        </div>
+      )}
+      
+      {/* Update Lead / Add Remark Modal */}
+      {selectedEventForRemark && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div 
+            className="w-full max-w-md flex flex-col rounded-xl shadow-2xl overflow-hidden"
+            style={{ backgroundColor: c.surface, borderColor: c.border, borderWidth: '1px' }}
+          >
+            <div className="flex justify-between items-center p-4 border-b shrink-0" style={{ borderColor: c.border }}>
+              <h2 className="text-lg font-bold" style={{ color: c.text }}>
+                Update Lead
+              </h2>
+              <button onClick={() => setSelectedEventForRemark(null)} className="p-2 rounded-full hover:bg-black/5" style={{ color: c.textSecondary }}>
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="px-4 py-3 border-b bg-black/5 dark:bg-white/5" style={{ borderColor: c.border }}>
+               <h3 className="font-bold truncate" style={{ color: c.text }}>{selectedEventForRemark.name}</h3>
+               <p className="text-xs mt-0.5" style={{ color: c.textSecondary }}>{selectedEventForRemark.phone}</p>
+            </div>
+
+            <form onSubmit={handleAddRemark} className="p-4 space-y-4 overflow-y-auto max-h-[60vh] custom-scrollbar">
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: c.text }}>Status</label>
+                <select 
+                  className="w-full p-2.5 rounded-lg border focus:ring-2 focus:outline-none transition-all"
+                  style={{ backgroundColor: c.background, borderColor: c.border, color: c.text }}
+                  value={remarkData.status}
+                  onChange={e => setRemarkData({...remarkData, status: e.target.value})}
+                >
+                  <option value="new">New</option>
+                  <option value="assigned">Assigned</option>
+                  <option value="in_process">In Process</option>
+                  <option value="interested">Interested</option>
+                  <option value="not_interested">Not Interested</option>
+                  <option value="call_done">Call Done</option>
+                  <option value="converted">Converted</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: c.text }}>Next Follow-up (Optional)</label>
+                <input 
+                  type="datetime-local" 
+                  className="w-full p-2.5 rounded-lg border focus:ring-2 focus:outline-none transition-all"
+                  style={{ backgroundColor: c.background, borderColor: c.border, color: c.text }}
+                  value={remarkData.followUpDate}
+                  onChange={e => setRemarkData({...remarkData, followUpDate: e.target.value})}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1" style={{ color: c.text }}>Remark Note <span className="text-red-500">*</span></label>
+                <textarea 
+                  required
+                  className="w-full p-2.5 rounded-lg border focus:ring-2 focus:outline-none transition-all min-h-[100px] resize-none"
+                  style={{ backgroundColor: c.background, borderColor: c.border, color: c.text }}
+                  placeholder="Enter conversation details..."
+                  value={remarkData.note}
+                  onChange={e => setRemarkData({...remarkData, note: e.target.value})}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setSelectedEventForRemark(null)} className="px-4 py-2 rounded-lg font-bold transition-all border" style={{ borderColor: c.border, color: c.text }}>
+                  Cancel
+                </button>
+                <button type="submit" disabled={isSubmittingRemark} className="px-4 py-2 rounded-lg font-bold text-white transition-all shadow-md hover:shadow-lg disabled:opacity-70" style={{ backgroundColor: c.primary }}>
+                  {isSubmittingRemark ? 'Saving...' : 'Save & Update'}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>
