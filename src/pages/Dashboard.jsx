@@ -152,7 +152,7 @@ export default function Dashboard() {
     title: { text: "Lead Flow", style: titleStyle },
     tooltip: { ...tooltipCfg, pointFormat: "<b>{point.y}</b> leads" },
     xAxis: {
-      categories: ["Calling Team", "Sales Panel", "Unassigned"],
+      categories: ["Sales Panel", "Unassigned"],
       labels: { style: { color: c.textSecondary, fontWeight: "600", fontSize: "12px" } },
       lineColor: "transparent",
       tickColor: "transparent",
@@ -169,7 +169,6 @@ export default function Dashboard() {
     series: [{
       name: "Leads",
       data: [
-        { y: stats.leadFlow?.callingTeam ?? 0, color: { linearGradient: { x1:0,x2:0,y1:0,y2:1 }, stops: [[0,"#6366f1"],[1,"#a5b4fc"]] } },
         { y: stats.leadFlow?.salesPanel  ?? 0, color: { linearGradient: { x1:0,x2:0,y1:0,y2:1 }, stops: [[0,"#3b82f6"],[1,"#93c5fd"]] } },
         { y: stats.leadFlow?.unassigned  ?? 0, color: { linearGradient: { x1:0,x2:0,y1:0,y2:1 }, stops: [[0,"#f59e0b"],[1,"#fcd34d"]] } },
       ],
@@ -273,7 +272,7 @@ export default function Dashboard() {
             </div>
             <div>
               <p className="text-sm font-bold" style={{ color: c.text }}>Lead Flow</p>
-              <p className="text-[11px]" style={{ color: c.textSecondary }}>Calling Team, Sales Panel, Unassigned</p>
+              <p className="text-[11px]" style={{ color: c.textSecondary }}>Sales Panel, Unassigned</p>
             </div>
           </div>
           <HighchartsReact highcharts={Highcharts} options={columnOptions} />
