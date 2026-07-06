@@ -31,4 +31,13 @@ export const dashboardAPI = {
     const response = await axiosInstance.get("/settings");
     return response.data;
   },
+
+  /**
+   * Fetch Lead Assignment Report
+   * @returns Promise
+   */
+  getLeadReport: async (params = {}) => {
+    const response = await axiosInstance.get("/dashboard/report", { params });
+    return response.data;
+  },
 };
