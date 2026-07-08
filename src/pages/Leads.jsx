@@ -239,6 +239,7 @@ export default function Leads() {
       name: lead.name || '',
       phone: lead.phone || '',
       email: lead.email || '',
+      address: lead.address || '',
       priority: lead.priority || '',
       tags: lead.tags ? lead.tags.join(', ') : ''
     });
@@ -253,6 +254,7 @@ export default function Leads() {
         name: updateData.name,
         phone: updateData.phone,
         email: updateData.email,
+        address: updateData.address,
         priority: updateData.priority,
         tags: updateData.tags.split(',').map(t => t.trim()).filter(Boolean)
       };
@@ -408,6 +410,7 @@ export default function Leads() {
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Name</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Phone</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Email</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Address</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Status</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Priority</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-wider text-gray-500 whitespace-nowrap">Verification</th>
@@ -422,6 +425,7 @@ export default function Leads() {
                       <td className="p-4 whitespace-nowrap font-extrabold text-gray-900">{lead.name || 'N/A'}</td>
                       <td className="p-4 whitespace-nowrap text-gray-700 font-semibold">{lead.phone || 'N/A'}</td>
                       <td className="p-4 whitespace-nowrap text-gray-600">{lead.email || 'N/A'}</td>
+                      <td className="p-4 whitespace-nowrap text-gray-600">{lead.address || 'N/A'}</td>
                       <td className="p-4 whitespace-nowrap">
                         <span className={`px-3 py-1 rounded-lg text-[11px] font-bold uppercase tracking-wide border ${statusColors[lead.status?.toLowerCase()] || 'bg-gray-50 text-gray-600 border-gray-200'}`}>
                           {lead.status || 'N/A'}
@@ -539,6 +543,10 @@ export default function Leads() {
                 <div className="md:col-span-2">
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Email</label>
                   <input type="email" value={updateData.email} onChange={e => setUpdateData({...updateData, email: e.target.value})} className="w-full p-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-gray-50/50 text-gray-900 font-medium" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Address</label>
+                  <input type="text" value={updateData.address} onChange={e => setUpdateData({...updateData, address: e.target.value})} className="w-full p-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-100 focus:outline-none bg-gray-50/50 text-gray-900 font-medium" />
                 </div>
                 <div>
                   <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Priority</label>

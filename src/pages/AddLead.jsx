@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import {
   User, Phone, Mail, FileText, Zap,
-  Globe, Facebook, PhoneCall, Users, ChevronDown,
+  Globe, Facebook, PhoneCall, Users, ChevronDown, MapPin,
   CheckCircle2, AlertCircle, Sparkles, PlusCircle, UserCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,7 +10,7 @@ import { leadAPI } from '../api/lead';
 import { userAPI } from '../api/user';
 import { dashboardAPI } from '../api/dashboard';
 
-const EMPTY = { name: '', phone: '', email: '', source: '', priority: '', remark: '', assignedTo: '', tags: '' };
+const EMPTY = { name: '', phone: '', email: '', address: '', source: '', priority: '', remark: '', assignedTo: '', tags: '' };
 
 const PRIORITY_META = {
   high:   { color: '#ef4444', bg: '#fee2e2', border: '#fca5a5', desc: 'Urgent' },
@@ -198,16 +198,28 @@ export default function AddLead() {
             </Field>
           </div>
 
-          {/* ── ROW 2 : Email ── */}
-          <Field label="Email Address" icon={Mail} c={c}>
-            <input
-              type="email" name="email"
-              value={formData.email} onChange={handleChange}
-              placeholder="e.g. rahul@example.com"
-              className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all"
-              style={inputSt}
-            />
-          </Field>
+          {/* ── ROW 2 : Email + Address ── */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+            <Field label="Email Address" icon={Mail} c={c}>
+              <input
+                type="email" name="email"
+                value={formData.email} onChange={handleChange}
+                placeholder="e.g. rahul@example.com"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all"
+                style={inputSt}
+              />
+            </Field>
+
+            <Field label="Address" icon={MapPin} c={c}>
+              <input
+                type="text" name="address"
+                value={formData.address} onChange={handleChange}
+                placeholder="e.g. 123 Main St, City"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all"
+                style={inputSt}
+              />
+            </Field>
+          </div>
 
           {/* ── DIVIDER ── */}
           <div className="border-t" style={{ borderColor: c.border }} />
