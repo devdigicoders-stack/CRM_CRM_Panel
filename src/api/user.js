@@ -25,7 +25,15 @@ export const userAPI = {
    * @returns Promise with users list
    */
   getAllActiveUsers: async () => {
-    const response = await axiosInstance.get("/users?active=true&limit=200");
-    return response.data;
+    try {
+      const response = await axiosInstance.get("/users?active=true&limit=200");
+      return response.data;
+    } catch (error) {
+      if (error.response && error.response.status === 403) {
+        // Fallback to sales-list if user doesn't have permission to get all users
+        return userAPI.getSalesList();
+      }
+      throw error;
+    }
   },
 };
