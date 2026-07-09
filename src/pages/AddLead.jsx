@@ -66,7 +66,7 @@ export default function AddLead() {
   }, [formData.phone]);
 
   useEffect(() => {
-    userAPI.getSalesList()
+    userAPI.getAllActiveUsers()
       .then(res => setSalesList(res?.data?.users || []))
       .catch(() => setSalesList([]));
 
@@ -303,7 +303,7 @@ export default function AddLead() {
           <div className="space-y-1.5">
             <label className="block text-[11px] font-bold uppercase tracking-wider"
               style={{ color: c.textSecondary }}>
-              Assigned To (Sales)
+              Assigned To
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
@@ -318,9 +318,9 @@ export default function AddLead() {
                 onChange={handleChange}
                 className="w-full pl-10 pr-8 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all appearance-none"
                 style={{ backgroundColor: c.background, color: c.text, borderColor: c.border }}>
-                <option value="">-- Select Sales Person --</option>
+                <option value="">-- Select Assignee --</option>
                 {salesList.map(s => (
-                  <option key={s._id} value={s._id}>{s.name} ({s.email})</option>
+                  <option key={s._id} value={s._id}>{s.name} ({s.role || 'staff'})</option>
                 ))}
               </select>
             </div>

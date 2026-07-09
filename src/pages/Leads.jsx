@@ -112,7 +112,7 @@ export default function Leads() {
   useEffect(() => {
     const fetchSalesUsers = async () => {
       try {
-        const res = await userAPI.getSalesList();
+        const res = await userAPI.getAllActiveUsers();
         setSalesUsers(res?.data?.users || []);
       } catch (err) {
         console.error("Failed to fetch sales users:", err);
@@ -856,14 +856,14 @@ export default function Leads() {
             </div>
             <form onSubmit={handleAssignLead} className="p-8 space-y-6">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Assign To Sales Representative</label>
+                <label className="block text-xs font-bold uppercase tracking-wider text-gray-600 mb-2">Assign To</label>
                 <select value={assignUserId} onChange={e => setAssignUserId(e.target.value)} className="w-full p-3.5 rounded-xl border border-gray-200 focus:ring-2 focus:ring-cyan-100 focus:border-cyan-400 focus:outline-none bg-gray-50/50 text-gray-900 font-medium" autoFocus>
-                  <option value="">Select a representative...</option>
+                  <option value="">Select an assignee...</option>
                   {salesUsers.map(user => (
-                    <option key={user._id} value={user._id}>{user.name} ({user.email})</option>
+                    <option key={user._id} value={user._id}>{user.name} ({user.role || 'staff'})</option>
                   ))}
                 </select>
-                <p className="text-[11px] text-gray-400 mt-2">Select the sales representative to handle this lead.</p>
+                <p className="text-[11px] text-gray-400 mt-2">Select the team member to handle this lead.</p>
               </div>
               <div className="pt-2 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsAssignModalOpen(false)} className="px-6 py-3 rounded-xl font-bold border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors">Cancel</button>
