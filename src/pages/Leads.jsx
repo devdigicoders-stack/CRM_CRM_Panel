@@ -641,6 +641,32 @@ export default function Leads() {
                     </div>
                   </div>
 
+                  {(() => {
+                    const screenshots = Array.from(new Set([
+                      ...(Array.isArray(detailsLead.paymentScreenshots) ? detailsLead.paymentScreenshots : []),
+                      ...(detailsLead.paymentScreenshot ? [detailsLead.paymentScreenshot] : [])
+                    ]));
+                    if (screenshots.length === 0) return null;
+                    return (
+                      <div>
+                        <h4 className="text-lg font-bold text-gray-900 mb-3 border-b pb-2">Payment Screenshots ({screenshots.length})</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {screenshots.map((url, i) => (
+                            <a
+                              key={i}
+                              href={`${import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace('/api/v1', '') : ''}${url}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-3 py-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-700 font-bold text-xs hover:bg-orange-100 transition flex items-center gap-1.5"
+                            >
+                              <FileText size={14} /> View Payment Screenshot {screenshots.length > 1 ? i + 1 : ''}
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
                   {/* Remarks */}
                   <div>
                     <h4 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Remarks History</h4>
