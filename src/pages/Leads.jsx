@@ -19,6 +19,27 @@ export default function Leads() {
   const [searchQuery, setSearchQuery] = useState('');
   const [tagQuery, setTagQuery] = useState('');
   
+  const [seenLeads, setSeenLeads] = useState(() => {
+    try {
+      const saved = localStorage.getItem('seen_lead_ids');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const markLeadAsSeen = (leadId) => {
+    if (leadId && !seenLeads.includes(leadId)) {
+      const updated = [...seenLeads, leadId];
+      setSeenLeads(updated);
+      try {
+        localStorage.setItem('seen_lead_ids', JSON.stringify(updated));
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+  
   // Update Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState(null);
@@ -420,9 +441,28 @@ export default function Leads() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {paginatedLeads.map((lead) => (
-                    <tr key={lead._id || Math.random()} className="hover:bg-blue-50/30 transition-colors duration-200">
-                      <td className="p-4 whitespace-nowrap font-extrabold text-gray-900">{lead.name || 'N/A'}</td>
+                  {paginatedLeads.map((lead) => {
+                    const isNew = lead._id && !seenLeads.includes(lead._id);
+                    return (
+                      <tr 
+                        key={lead._id || Math.random()} 
+                        className={`transition-colors duration-200 cursor-pointer ${
+                          isNew 
+                            ? 'bg-blue-50/80 hover:bg-blue-100/90 border-l-4 border-blue-500 font-semibold' 
+                            : 'hover:bg-blue-50/30'
+                        }`}
+                        onClick={() => lead._id && markLeadAsSeen(lead._id)}
+                      >
+                        <td className="p-4 whitespace-nowrap font-extrabold text-gray-900">
+                          <div className="flex items-center gap-2">
+                            <span>{lead.name || 'N/A'}</span>
+                            {isNew && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-blue-600 text-white tracking-wide uppercase shadow-xs animate-pulse">
+                                NEW
+                              </span>
+                            )}
+                          </div>
+                        </td>
                       <td className="p-4 whitespace-nowrap text-gray-700 font-semibold">{lead.phone || 'N/A'}</td>
                       <td className="p-4 whitespace-nowrap text-gray-600">{lead.email || 'N/A'}</td>
                       <td className="p-4 whitespace-nowrap text-gray-600">{lead.address || 'N/A'}</td>
@@ -475,7 +515,8 @@ export default function Leads() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  );
+                })}
                 </tbody>
               </table>
             </div>
