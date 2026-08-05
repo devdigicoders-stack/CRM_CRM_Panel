@@ -9,23 +9,32 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { themeColors: c } = useTheme();
+  const { logout } = useAuth();
   const [stats, setStats]     = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError]     = useState(null);
+  const [isAuthError, setIsAuthError] = useState(false);
 
   const isDark = c.mode === "dark";
 
   const fetchStats = async () => {
     try {
-      setLoading(true); setError(null);
+      setLoading(true); setError(null); setIsAuthError(false);
       const res = await dashboardAPI.getDashboardStats();
       setStats(res?.data || res);
-    } catch {
-      setError("Failed to load dashboard statistics.");
+    } catch (err) {
+      console.error("Dashboard fetch error:", err);
+      if (err.response?.status === 401) {
+        setIsAuthError(true);
+        setError("Session expired. Please login again.");
+      } else {
+        setError("Failed to load dashboard statistics.");
+      }
     } finally {
       setLoading(false);
     }
@@ -52,14 +61,22 @@ export default function Dashboard() {
         <AlertCircle size={32} />
       </div>
       <div>
-        <h3 className="text-lg font-bold" style={{ color: c.text }}>Failed to load</h3>
+        <h3 className="text-lg font-bold" style={{ color: c.text }}>{isAuthError ? "Session Expired" : "Failed to load"}</h3>
         <p className="text-sm mt-1" style={{ color: c.textSecondary }}>{error}</p>
       </div>
-      <button onClick={fetchStats}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-all"
-        style={{ backgroundColor: c.primary, color: "#fff" }}>
-        <RefreshCw size={14} /> Retry
-      </button>
+      {isAuthError ? (
+        <button onClick={logout}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-all"
+          style={{ backgroundColor: c.danger, color: "#fff" }}>
+          Logout
+        </button>
+      ) : (
+        <button onClick={fetchStats}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold hover:opacity-90 transition-all"
+          style={{ backgroundColor: c.primary, color: "#fff" }}>
+          <RefreshCw size={14} /> Retry
+        </button>
+      )}
     </div>
   );
 
