@@ -461,6 +461,11 @@ export default function Leads() {
                                 NEW
                               </span>
                             )}
+                            {lead.isReassigned && (
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-extrabold bg-orange-500 text-white tracking-wide uppercase shadow-xs">
+                                REASSIGNED
+                              </span>
+                            )}
                           </div>
                         </td>
                       <td className="p-4 whitespace-nowrap text-gray-700 font-semibold">{lead.phone || 'N/A'}</td>
