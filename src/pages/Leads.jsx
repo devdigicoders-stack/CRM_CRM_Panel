@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
-import { Phone, MessageCircle, Edit3, X, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Mail, MapPin, AlertCircle, TrendingUp, Plus, Eye, FileText, UserPlus, Upload, Download } from 'lucide-react';
+import { Phone, MessageCircle, Edit3, X, Users, CheckCircle, Clock, ChevronLeft, ChevronRight, Mail, MapPin, AlertCircle, TrendingUp, Plus, Eye, FileText, UserPlus, Upload, Download, Tag, ChevronDown, Check, CheckCircle2, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import { leadAPI } from '../api/lead';
 import { userAPI } from '../api/user';
@@ -17,7 +17,10 @@ export default function Leads() {
   
   // Search and Filter States
   const [searchQuery, setSearchQuery] = useState('');
-  const [tagQuery, setTagQuery] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [tagSearch, setTagSearch] = useState('');
+  const tagDropdownRef = useRef(null);
   
   const [seenLeads, setSeenLeads] = useState(() => {
     try {
@@ -218,12 +221,22 @@ export default function Leads() {
   const itemsPerPage = 8;
 
   useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (tagDropdownRef.current && !tagDropdownRef.current.contains(e.target)) {
+        setTagDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  useEffect(() => {
     const timer = setTimeout(() => {
       fetchLeads(false);
     }, 400);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, tagQuery]);
+  }, [searchQuery, selectedTags]);
 
   const fetchLeads = async (isReset = false) => {
     try {
@@ -233,7 +246,7 @@ export default function Leads() {
       const params = {};
       if (isReset !== true) {
         if (searchQuery) params.search = searchQuery;
-        if (tagQuery) params.tag = tagQuery;
+        if (selectedTags.length > 0) params.tag = selectedTags.join(',');
       }
       
       const res = await leadAPI.getAllLeads(params);
@@ -374,25 +387,126 @@ export default function Leads() {
             style={{ borderColor: themeColors?.border }}
           />
         </div>
-        <div className="flex-1 min-w-[200px]">
-          <select
-            value={tagQuery}
-            onChange={(e) => setTagQuery(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white"
-            style={{ borderColor: themeColors?.border }}
+        <div className="flex-1 min-w-[200px] relative" ref={tagDropdownRef}>
+          <button
+            type="button"
+            onClick={() => setTagDropdownOpen(!tagDropdownOpen)}
+            className="w-full flex items-center justify-between gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all bg-white cursor-pointer"
+            style={{
+              borderColor: selectedTags.length > 0 ? themeColors?.primary : themeColors?.border,
+              backgroundColor: selectedTags.length > 0 ? `${themeColors?.primary}10` : '#fff',
+            }}
           >
-            <option value="">All Tags</option>
-            {leadTags.map(tag => (
-              <option key={tag} value={tag}>{tag}</option>
-            ))}
-          </select>
+            <div className="flex items-center gap-1.5 truncate">
+              <Tag size={13} style={{ color: selectedTags.length > 0 ? themeColors?.primary : '#6b7280' }} />
+              <span className="truncate" style={{ color: selectedTags.length > 0 ? themeColors?.primary : '#1f2937' }}>
+                {selectedTags.length === 0
+                  ? 'All Tags'
+                  : selectedTags.length === 1
+                  ? selectedTags[0]
+                  : `${selectedTags.length} Tags Selected`}
+              </span>
+            </div>
+            <ChevronDown size={14} className={`transition-transform duration-200 shrink-0 text-gray-500 ${tagDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {tagDropdownOpen && (
+            <div className="absolute left-0 top-full mt-2 w-full min-w-[240px] max-h-80 rounded-2xl border shadow-2xl z-50 flex flex-col overflow-hidden bg-white" style={{ borderColor: themeColors?.border }}>
+              <div className="p-2.5 border-b flex flex-col gap-2 border-gray-100">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[11px] font-black uppercase tracking-wider text-gray-500">
+                    Filter by Tags ({selectedTags.length})
+                  </span>
+                  {selectedTags.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTags([])}
+                      className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer"
+                    >
+                      Reset All
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search tags..."
+                    value={tagSearch}
+                    onChange={e => setTagSearch(e.target.value)}
+                    className="w-full pl-7 pr-6 py-1.5 text-xs rounded-lg border outline-none font-medium border-gray-200"
+                  />
+                  <Search size={12} className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                  {tagSearch && (
+                    <button type="button" onClick={() => setTagSearch('')} className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer">
+                      <X size={11} className="text-gray-400" />
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="overflow-y-auto p-1.5 space-y-0.5 flex-1 max-h-52">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTags([])}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors text-left cursor-pointer hover:bg-gray-50"
+                  style={{
+                    backgroundColor: selectedTags.length === 0 ? `${themeColors?.primary}15` : 'transparent',
+                    color: selectedTags.length === 0 ? themeColors?.primary : '#1f2937',
+                  }}
+                >
+                  <span>All Tags</span>
+                  {selectedTags.length === 0 && <CheckCircle2 size={13} style={{ color: themeColors?.primary }} />}
+                </button>
+
+                {leadTags
+                  .filter(t => t.toLowerCase().includes(tagSearch.toLowerCase()))
+                  .map(tag => {
+                    const isSelected = selectedTags.includes(tag);
+                    return (
+                      <button
+                        key={tag}
+                        type="button"
+                        onClick={() => {
+                          setSelectedTags(prev =>
+                            isSelected ? prev.filter(item => item !== tag) : [...prev, tag]
+                          );
+                        }}
+                        className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-colors text-left cursor-pointer hover:bg-gray-50"
+                        style={{
+                          backgroundColor: isSelected ? `${themeColors?.primary}15` : 'transparent',
+                          color: isSelected ? themeColors?.primary : '#1f2937',
+                        }}
+                      >
+                        <div className="flex items-center gap-2 truncate">
+                          <div
+                            className="w-3.5 h-3.5 rounded border flex items-center justify-center transition-all shrink-0"
+                            style={{
+                              borderColor: isSelected ? themeColors?.primary : '#d1d5db',
+                              backgroundColor: isSelected ? themeColors?.primary : 'transparent',
+                            }}
+                          >
+                            {isSelected && <Check size={10} color="#fff" strokeWidth={3} />}
+                          </div>
+                          <span className="truncate">{tag}</span>
+                        </div>
+                        {isSelected && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full" style={{ backgroundColor: `${themeColors?.primary}25`, color: themeColors?.primary }}>
+                            Active
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
         </div>
         <button 
           onClick={() => {
             setSearchQuery('');
-            setTagQuery('');
+            setSelectedTags([]);
           }}
-          className="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 shadow-sm hover:bg-gray-200 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+          className="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 shadow-sm hover:bg-gray-200 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 cursor-pointer"
         >
           Clear Filters
         </button>
