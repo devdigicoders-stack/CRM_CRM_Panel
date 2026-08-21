@@ -10,7 +10,7 @@ import { leadAPI } from '../api/lead';
 import { userAPI } from '../api/user';
 import { dashboardAPI } from '../api/dashboard';
 
-const EMPTY = { name: '', phone: '', email: '', address: '', source: '', priority: '', remark: '', assignedTo: '', tags: '' };
+const EMPTY = { name: '', phone: '', email: '', address: '', source: '', priority: '', remark: '', assignedTo: '', tags: [] };
 
 const PRIORITY_META = {
   high:   { color: '#ef4444', bg: '#fee2e2', border: '#fca5a5', desc: 'Urgent' },
@@ -94,7 +94,13 @@ export default function AddLead() {
     e.preventDefault();
     setLoading(true);
     try {
-      await leadAPI.createLead(formData);
+      const payload = {
+        ...formData,
+        tags: Array.isArray(formData.tags)
+          ? (formData.tags.length > 0 ? formData.tags : undefined)
+          : (formData.tags ? [formData.tags] : undefined)
+      };
+      await leadAPI.createLead(payload);
       toast.success('Lead added successfully!');
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
@@ -283,20 +289,44 @@ export default function AddLead() {
 
           {/* ── TAGS ── */}
           <div className="space-y-1.5">
-            <label className="block text-[11px] font-bold uppercase tracking-wider"
-              style={{ color: c.textSecondary }}>Tags</label>
-            <div className="relative">
-              <ChevronDown size={14} className="absolute inset-y-0 right-3 my-auto pointer-events-none"
-                style={{ color: c.textSecondary }} />
-              <select name="tags" value={formData.tags} onChange={handleChange}
-                className="w-full pl-4 pr-8 py-2.5 rounded-xl border text-sm font-medium outline-none transition-all appearance-none"
-                style={{ backgroundColor: c.background, color: c.text, borderColor: c.border }}>
-                <option value="">-- Select Tag --</option>
-                {leadTags.map(tag => (
-                  <option key={tag} value={tag}>{tag}</option>
-                ))}
-              </select>
+            <div className="flex items-center justify-between">
+              <label className="block text-[11px] font-bold uppercase tracking-wider"
+                style={{ color: c.textSecondary }}>Tags (Multi-select)</label>
+              {Array.isArray(formData.tags) && formData.tags.length > 0 && (
+                <button type="button" onClick={() => setFormData(prev => ({ ...prev, tags: [] }))} className="text-[10px] font-bold text-red-500 hover:underline">
+                  Clear ({formData.tags.length})
+                </button>
+              )}
             </div>
+            {leadTags.length > 0 ? (
+              <div className="flex flex-wrap gap-2 p-3 rounded-xl border min-h-[46px]" style={{ backgroundColor: c.background, borderColor: c.border }}>
+                {leadTags.map(tag => {
+                  const currentTags = Array.isArray(formData.tags) ? formData.tags : (formData.tags ? [formData.tags] : []);
+                  const selected = currentTags.includes(tag);
+                  return (
+                    <button key={tag} type="button"
+                      onClick={() => setFormData(prev => {
+                        const cur = Array.isArray(prev.tags) ? prev.tags : (prev.tags ? [prev.tags] : []);
+                        return {
+                          ...prev,
+                          tags: selected ? cur.filter(t => t !== tag) : [...cur, tag]
+                        };
+                      })}
+                      className="px-2.5 py-1 rounded-full text-[11px] font-bold border transition-all flex items-center gap-1"
+                      style={{
+                        backgroundColor: selected ? c.primary : c.background,
+                        color: selected ? '#fff' : c.textSecondary,
+                        borderColor: selected ? c.primary : c.border,
+                      }}>
+                      {selected && <CheckCircle2 size={11} />}
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="text-xs italic py-2" style={{ color: c.textSecondary }}>No tags configured</p>
+            )}
           </div>
 
           {/* ── ASSIGNED TO ── */}
