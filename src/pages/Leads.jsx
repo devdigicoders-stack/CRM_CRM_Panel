@@ -523,7 +523,10 @@ export default function Leads() {
         <div className="flex-1 min-w-[180px]">
           <select
             value={selectedBranch}
-            onChange={(e) => setSelectedBranch(e.target.value)}
+            onChange={(e) => {
+              setSelectedBranch(e.target.value);
+              setSelectedUser(''); // Reset user filter when branch changes
+            }}
             className="w-full px-4 py-2.5 rounded-xl border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white cursor-pointer"
             style={{ borderColor: themeColors?.border, color: selectedBranch ? themeColors?.primary : '#1f2937' }}
           >
@@ -544,9 +547,22 @@ export default function Leads() {
           >
             <option value="">All Users</option>
             <option value="unassigned">Unassigned</option>
-            {salesUsers.map(u => (
-              <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
-            ))}
+            {(() => {
+              const selectedBranchObj = branches.find(b => b._id === selectedBranch);
+              const displayUsers = selectedBranchObj
+                ? [
+                    ...(selectedBranchObj.branchManager ? [selectedBranchObj.branchManager] : []),
+                    ...(selectedBranchObj.assignedUsers || [])
+                  ]
+                : salesUsers;
+              
+              // Remove duplicates if any
+              const uniqueUsers = Array.from(new Map(displayUsers.map(u => [u._id, u])).values());
+
+              return uniqueUsers.map(u => (
+                <option key={u._id} value={u._id}>{u.name} ({u.role || 'user'})</option>
+              ));
+            })()}
           </select>
         </div>
 
