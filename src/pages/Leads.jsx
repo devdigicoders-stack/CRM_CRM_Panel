@@ -21,6 +21,10 @@ export default function Leads() {
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const [tagSearch, setTagSearch] = useState('');
   const tagDropdownRef = useRef(null);
+
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedUser, setSelectedUser] = useState('');
   
   const [seenLeads, setSeenLeads] = useState(() => {
     try {
@@ -144,6 +148,17 @@ export default function Leads() {
     };
     fetchSalesUsers();
 
+    const fetchBranches = async () => {
+      try {
+        const res = await axiosInstance.get('/branches');
+        const list = res?.data?.data?.branches || res?.data?.branches || [];
+        setBranches(list);
+      } catch (err) {
+        console.error("Failed to fetch branches:", err);
+      }
+    };
+    fetchBranches();
+
     dashboardAPI.getSettings()
       .then(res => setLeadTags(res?.data?.settings?.leadTags || []))
       .catch(() => {});
@@ -236,7 +251,7 @@ export default function Leads() {
     }, 400);
     return () => clearTimeout(timer);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchQuery, selectedTags]);
+  }, [searchQuery, selectedTags, selectedBranch, selectedUser]);
 
   const fetchLeads = async (isReset = false) => {
     try {
@@ -247,6 +262,8 @@ export default function Leads() {
       if (isReset !== true) {
         if (searchQuery) params.search = searchQuery;
         if (selectedTags.length > 0) params.tag = selectedTags.join(',');
+        if (selectedBranch) params.branchId = selectedBranch;
+        if (selectedUser) params.assignedTo = selectedUser;
       }
       
       const res = await leadAPI.getAllLeads(params);
@@ -501,10 +518,44 @@ export default function Leads() {
             </div>
           )}
         </div>
+
+        {/* Branch Filter */}
+        <div className="flex-1 min-w-[180px]">
+          <select
+            value={selectedBranch}
+            onChange={(e) => setSelectedBranch(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white cursor-pointer"
+            style={{ borderColor: themeColors?.border, color: selectedBranch ? themeColors?.primary : '#1f2937' }}
+          >
+            <option value="">All Branches</option>
+            {branches.map(b => (
+              <option key={b._id} value={b._id}>{b.name}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* User Filter */}
+        <div className="flex-1 min-w-[180px]">
+          <select
+            value={selectedUser}
+            onChange={(e) => setSelectedUser(e.target.value)}
+            className="w-full px-4 py-2.5 rounded-xl border text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-100 bg-white cursor-pointer"
+            style={{ borderColor: themeColors?.border, color: selectedUser ? themeColors?.primary : '#1f2937' }}
+          >
+            <option value="">All Users</option>
+            <option value="unassigned">Unassigned</option>
+            {salesUsers.map(u => (
+              <option key={u._id} value={u._id}>{u.name} ({u.role})</option>
+            ))}
+          </select>
+        </div>
+
         <button 
           onClick={() => {
             setSearchQuery('');
             setSelectedTags([]);
+            setSelectedBranch('');
+            setSelectedUser('');
           }}
           className="inline-flex items-center px-6 py-2.5 rounded-xl text-sm font-bold bg-gray-100 text-gray-700 shadow-sm hover:bg-gray-200 transition-all focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 cursor-pointer"
         >
