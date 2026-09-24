@@ -15,7 +15,7 @@ import { profileAPI } from '../api/profile';
 ───────────────────────────────────────── */
 export default function Profile() {
   const { themeColors } = useTheme();
-  const { admin } = useAuth();
+  const { admin, logout } = useAuth();
 
   const [activeTab, setActiveTab]       = useState('general');
   const [loading, setLoading]           = useState(true);
@@ -63,8 +63,11 @@ export default function Profile() {
     setSavingPassword(true);
     try {
       const data = await authAPI.changePassword(passwords.current, passwords.new);
-      toast.success(data?.message || 'Password updated!');
+      toast.success(data?.message || 'Password updated successfully! Logging out...');
       setPasswords({ current: '', new: '', confirm: '' });
+      setTimeout(() => {
+        logout();
+      }, 1200);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to change password.');
     } finally {
