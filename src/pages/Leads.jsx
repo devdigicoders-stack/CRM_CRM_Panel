@@ -72,10 +72,7 @@ export default function Leads() {
   const [salesUsers, setSalesUsers] = useState([]);
   const [leadTags, setLeadTags] = useState([]);
 
-  // Bulk Upload Modal State
-  const [isBulkModalOpen, setIsBulkModalOpen] = useState(false);
-  const [bulkFile, setBulkFile] = useState(null);
-  const [isBulkUploading, setIsBulkUploading] = useState(false);
+  // Bulk Upload state removed — only SuperAdmin/Admin can bulk upload
 
   const handleViewDetails = async (id) => {
     try {
@@ -193,42 +190,6 @@ export default function Leads() {
     } finally {
       setIsAssigning(false);
     }
-  };
-
-  const handleBulkUpload = async () => {
-    if (!bulkFile) return toast.error('Pehle file select karo.');
-    try {
-      setIsBulkUploading(true);
-      const formData = new FormData();
-      formData.append('file', bulkFile);
-      await axiosInstance.post('/leads/bulk-upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('Leads bulk uploaded successfully!');
-      setIsBulkModalOpen(false);
-      setBulkFile(null);
-      fetchLeads();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Bulk upload failed.');
-    } finally {
-      setIsBulkUploading(false);
-    }
-  };
-
-  const handleSampleDownload = () => {
-    const headers = ['name', 'phone', 'email', 'source', 'priority', 'remark'];
-    const sample = [
-      ['Rahul Sharma', '9876543210', 'rahul@example.com', 'Google Ads', 'high', 'Interested in product'],
-      ['Priya Singh', '9123456789', 'priya@example.com', 'Facebook Ads', 'medium', 'Follow up next week'],
-    ];
-    const csvContent = [headers, ...sample].map(r => r.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'leads_sample.csv';
-    a.click();
-    URL.revokeObjectURL(url);
   };
 
   // Pagination states
