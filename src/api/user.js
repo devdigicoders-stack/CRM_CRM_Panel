@@ -36,4 +36,13 @@ export const userAPI = {
       throw error;
     }
   },
+
+  /**
+   * Get list of telecaller / calling users
+   * @returns Promise with telecaller list
+   */
+  getTelecallerList: async () => {
+    const response = await axiosInstance.get("/users/telecaller-list");
+    return response.data;
+  },
 };

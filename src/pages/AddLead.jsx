@@ -50,8 +50,10 @@ export default function AddLead() {
             setPhoneConflict({
               exists: true,
               name: lead.name,
-              assignedToName: lead.assignedTo?.name || null,
-              assignedToRole: lead.assignedTo?.role || null,
+              assignedToName: lead.assignedEmployeeName || lead.assignedTo?.name || null,
+              assignedToRole: lead.assignedEmployeeRole || lead.assignedTo?.role || null,
+              status: lead.status,
+              assignedBranch: lead.assignedBranch?.name || null,
             });
           } else {
             setPhoneConflict(null);
@@ -190,14 +192,16 @@ export default function AddLead() {
               {phoneConflict && (
                 <div className="mt-2 flex items-start gap-2.5 p-3 rounded-xl border text-xs font-bold animate-in fade-in duration-200"
                   style={{ backgroundColor: '#fee2e2', borderColor: '#fca5a5', color: '#b91c1c' }}>
-                  <AlertCircle size={14} className="shrink-0 mt-0.5" />
-                  <div>
-                    <span>⚠️ Yeh lead/mobile number pehle se hi added hai under lead <b>{phoneConflict.name}</b>.</span>
-                    {phoneConflict.assignedToName ? (
-                      <span> Assigned to: <b className="capitalize">{phoneConflict.assignedToName}</b> ({phoneConflict.assignedToRole || 'sales'})</span>
-                    ) : (
-                      <span> (Not assigned yet)</span>
-                    )}
+                  <AlertCircle size={15} className="shrink-0 mt-0.5 text-red-600" />
+                  <div className="space-y-1">
+                    <div>
+                      ⚠️ <span className="font-extrabold uppercase tracking-wide">Duplicate Lead Alert:</span> Yeh mobile number already system mein exist karta hai: <b>{phoneConflict.name}</b>
+                    </div>
+                    <div className="text-[11px] font-medium text-red-950 flex flex-wrap gap-x-3 gap-y-1">
+                      <span>👤 Assigned: <b>{phoneConflict.assignedToName || 'Unassigned'}</b> {phoneConflict.assignedToRole ? `(${phoneConflict.assignedToRole})` : ''}</span>
+                      <span>📌 Status: <b className="uppercase">{phoneConflict.status || 'NEW'}</b></span>
+                      {phoneConflict.assignedBranch && <span>🏢 Branch: <b>{phoneConflict.assignedBranch}</b></span>}
+                    </div>
                   </div>
                 </div>
               )}

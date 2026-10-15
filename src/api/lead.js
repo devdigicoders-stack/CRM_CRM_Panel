@@ -73,4 +73,14 @@ export const leadAPI = {
     const response = await axiosInstance.get('/leads/check-phone', { params: { phone } });
     return response.data;
   },
+
+  /**
+   * Bulk paste and distribute leads to telecallers (e.g. Jyoti, Alpana)
+   * @param {Object} data - { rawData, targetUserIds, distributionMode, skipDuplicates, source }
+   * @returns Promise
+   */
+  bulkDistribute: async (data) => {
+    const response = await axiosInstance.post('/leads/bulk-distribute', data);
+    return response.data;
+  },
 };
